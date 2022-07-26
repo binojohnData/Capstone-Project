@@ -1,0 +1,33 @@
+# Import Libraries
+import pandas as pd
+import datetime as dt
+import os
+from pyspark.sql import SparkSession
+from pyspark.sql import SQLContext
+from pyspark.sql.functions import isnan, when, count, col
+from pyspark.sql.functions import monotonically_increasing_id
+from pyspark.sql.types import *
+
+def get_null_count(df):
+    '''
+    Get the count of nulls in each of the columns in a given dataframe df
+    '''
+    null_df= df.select([count(when(isnan(c) | col(c).isNull(), c)).alias(c) for c in df.columns]
+   ).toPandas()
+    return null_df
+
+
+def data_quality_check(output_path,spark):
+    for file_dir in os.listdir(output_path):
+        path = output_path + str(file_dir)
+        df_table = spark.read.parquet(path)
+        row_count = df_table.count()
+        
+    if row_count<=0:
+        print(f"Data quality check failed: 0 rows found in table {file_dir}")
+    else:
+        print("Data quality check passed: Table " + path.split('/')[-1] + f"has a total of {row_count} rows.")
+    return 0    
+    
+
+
